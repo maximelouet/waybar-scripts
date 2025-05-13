@@ -1,29 +1,43 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
-command="brightnessctl -m"
+receive_pipe="/tmp/waybar-laptop-brightness-module-rx"
+step=2
 
-case $BLOCK_BUTTON in
-  3) # right click: toggle min/full brightness
-    rounded=$($command | cut -d ',' -f4 |  tr -d '%')
-    if [ "$rounded" -ge 50 ]; then
-      command="sudo brightnessctl -m set 100%"
-    else
-      command="sudo brightnessctl -m set 1"
-    fi
-    ;;
-  4) # scroll up: increase brightness by 2%
-    command="sudo brightnessctl -m set -m +2%"
-    ;;
-  5) # scroll down: decrease brightness by 2%
-    command="sudo brightnessctl -m set -m 2%-"
-    ;;
-esac
+rm -rf "$receive_pipe"
+mkfifo "$receive_pipe"
 
-current=$($command | cut -d ',' -f4 |  tr -d '%')
+print_brightness() {
+  if brightness=$("$@"); then
+    brightness=$(echo "$brightness" | cut -d ',' -f4 | tr -d '%')
+  else
+    brightness=-1
+  fi
+  echo "{ \"text\": \"$brightness\", \"tooltip\": \"Laptop monitor: $brightness%\" }"
+}
 
-if [ -z "$current" ]; then
-  printf " <span fallback='true'>  </span>?? \n"
-  exit 0
-fi
+# main brightnessctl command
+brightnessctl_command() {
+  brightnessctl -m "$@"
+}
 
-printf " <span fallback='true'>  </span>$current<span font_size='small'>%%</span> \n"
+# in case waybar restarted the script after restarting/replugging a monitor
+print_brightness brightnessctl_command
+
+while true; do
+  read -r command < "$receive_pipe"
+  case $command in
+    +)
+      print_brightness brightnessctl_command set +"$step"%
+      ;;
+    -)
+      print_brightness brightnessctl_command set "$step"%-
+      ;;
+    max)
+      print_brightness brightnessctl_command set 100%
+      ;;
+    min)
+      print_brightness brightnessctl_command set 1
+      ;;
+  esac
+  print_brightness brightnessctl_command
+done
