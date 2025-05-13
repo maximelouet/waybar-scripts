@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+
+monitor_name="$1"
+
+receive_pipe="/tmp/waybar-ddc-module-$monitor_name-rx"
+step=20
+
+rm -rf "$receive_pipe"
+mkfifo "$receive_pipe"
+
+cache_file="/tmp/ddcutil_detect_cache"
+
+# Initialise cache
+[ -e "$cache_file" ] || ddcutil --brief detect | grep -v "should not exist" >"$cache_file"
+
+# Match monitor name to I2C bus number
+bus_number=$(grep -B4 "$monitor_name" "$cache_file" | grep -i i2c | head -n1 | cut -d'-' -f2)
+
+# takes ddcutil commandline as arguments
+print_brightness() {
+  if brightness=$("$@" getvcp 10 --brief); then
+    brightness=$(echo "$brightness" | cut -d ' ' -f 4)
+  else
+    brightness=-1
+  fi
+  echo "{ \"text\": \"$brightness\", \"tooltip\": \"Monitor $monitor_name: $brightness%\" }"
+}
+
+# main ddcutil command
+ddcutil_command() {
+  ddcutil --bus "$bus_number" "$@" 2>/dev/null
+}
+
+# in case waybar restarted the script after restarting/replugging a monitor
+print_brightness ddcutil_command
+
+while true; do
+  read -r command < "$receive_pipe"
+  case $command in
+    + | -)
+      ddcutil_command setvcp 10 "$command" $step
+      ;;
+    max)
+      ddcutil_command setvcp 10 100
+      ;;
+    min)
+      ddcutil_command setvcp 10 0
+      ;;
+  esac
+  print_brightness ddcutil_command
+done

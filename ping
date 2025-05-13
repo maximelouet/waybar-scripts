@@ -1,28 +1,16 @@
 #!/usr/bin/env sh
-#
-# Saumon i3blocks scripts
-# ping (current ping in ms to cloudfare)
-#
 
-case $BLOCK_BUTTON in
-  2) # middle click: show traceroute
-    id=$(dunstify --printid -u low --timeout 20000 "Traceroute" "Generating traceroute...")
-    traceroute="$(mtr -bwe 1.1.1.1)"
-    dunstify -r "$id" -u low --timeout 10 "Traceroute" "Generating traceroute..."
-    zenity --info --width=900 --text="<span font_family='monospace'>$traceroute</span>"
-    ;;
-esac
+while true; do
+    ping=$(ping -q -w 3 -c 1 1.1.1.1 | tail -n1 | cut -d '/' -f 5 | awk -F. '{print $1}' | tr -d '\n')
 
-ping=$(ping -q -w 2 -c 1 1.1.1.1 | tail -n1 | cut -d '/' -f 5 | awk -F. '{print $1}' | tr -d '\n')
-
-if [ "$(expr "$ping" : "[0-9]*$")" -eq 0 ]; then
-  printf "<span color='#ffffff' size='xx-large'>  ···  </span>\n"
-  exit 33
-elif [ "$ping" -ge 200 ]; then
-  printf "<span color='#EF6C00'> %s <span font_size='small'>ms</span> </span>\n" "$ping"
-else
-  if [ "$ping" -eq 0 ]; then
-    ping=1
-  fi
-  printf " %s <span font_size='small'>ms</span> \n" "$ping"
-fi
+    if [ "$(expr "$ping" : "[0-9]*$")" -eq 0 ]; then
+        printf '{"text": "", "tooltip": "Ping: failing or > 3000ms", "class": "failing"}\n'
+    elif [ "$ping" -lt 25 ]; then
+        printf '{"text": "", "tooltip": "Ping: %s ms", "class": "fast"}\n' "$ping"
+    elif [ "$ping" -lt 100 ]; then
+        printf '{"text": "", "tooltip": "Ping: %s ms", "class": "normal"}\n' "$ping"
+    else
+        printf '{"text": "", "tooltip": "Ping: %s ms", "class": "slow"}\n' "$ping"
+    fi
+    sleep 8
+done
