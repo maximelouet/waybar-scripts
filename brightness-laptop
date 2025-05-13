@@ -38,6 +38,8 @@ while true; do
     min)
       print_brightness brightnessctl_command set 1
       ;;
+    *)
+      print_brightness brightnessctl_command
+      ;;
   esac
-  print_brightness brightnessctl_command
 done
