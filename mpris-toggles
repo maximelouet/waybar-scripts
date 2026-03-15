@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+playerctl -F metadata custom:player.shuffle | while read -r shufflestatus; do
+    if [ "$shufflestatus" = "true" ]; then
+        printf '{"text": "", "tooltip": "Shuffle playback enabled", "class": "shuffle"}\n'
+    else
+        printf '{"text": ""}\n'
+    fi
+done
