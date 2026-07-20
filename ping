@@ -12,5 +12,5 @@ while true; do
     else
         printf '{"text": "", "tooltip": "Ping: %s ms", "class": "slow"}\n' "$ping"
     fi
-    sleep 8
+    sleep 5
 done
