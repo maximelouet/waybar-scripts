@@ -4,17 +4,11 @@
 # volume (pulseaudio volume display and control)
 #
 
-if ! command -v pactl >/dev/null; then
-  echo " !dep "
-  exit 33
-fi
-
 case $BLOCK_BUTTON in
-  2) pgrep pavucontrol || pavucontrol & ;;& # middle click: bring up volume mixer
-  3) pactl set-sink-mute @DEFAULT_SINK@ toggle ;;& # right click: toggle mute
-  4) pactl set-sink-volume @DEFAULT_SINK@ +4% ;;& # scroll up: increase vol by 4%
-  5) pactl set-sink-volume @DEFAULT_SINK@ -4% ;;& # scroll down: decrease vol by 4%
-  2|3|4|5) pkill -RTMIN+10 i3blocks ;;
+  2) pgrep pavucontrol || pavucontrol & ;; # middle click: bring up volume mixer
+  3) pactl set-sink-mute @DEFAULT_SINK@ toggle ;; # right click: toggle mute
+  4) pactl set-sink-volume @DEFAULT_SINK@ +4% ;; # scroll up: increase vol by 4%
+  5) pactl set-sink-volume @DEFAULT_SINK@ -4% ;; # scroll down: decrease vol by 4%
 esac
 
 active_sink=$(pactl get-default-sink)
