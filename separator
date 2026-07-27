@@ -1,7 +1,0 @@
-#!/usr/bin/env sh
-#
-# Saumon i3blocks scripts
-# separator (small separator symbol)
-#
-
-echo "<span color='#aaa'> <b>·</b> </span>"
